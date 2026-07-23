@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PagamentoRouteImport } from './routes/pagamento'
+import { Route as MeusIngressosRouteImport } from './routes/meus-ingressos'
+import { Route as IngressoRouteImport } from './routes/ingresso'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PagamentoRoute = PagamentoRouteImport.update({
+  id: '/pagamento',
+  path: '/pagamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusIngressosRoute = MeusIngressosRouteImport.update({
+  id: '/meus-ingressos',
+  path: '/meus-ingressos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IngressoRoute = IngressoRouteImport.update({
+  id: '/ingresso',
+  path: '/ingresso',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ingresso': typeof IngressoRoute
+  '/meus-ingressos': typeof MeusIngressosRoute
+  '/pagamento': typeof PagamentoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ingresso': typeof IngressoRoute
+  '/meus-ingressos': typeof MeusIngressosRoute
+  '/pagamento': typeof PagamentoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ingresso': typeof IngressoRoute
+  '/meus-ingressos': typeof MeusIngressosRoute
+  '/pagamento': typeof PagamentoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/ingresso' | '/meus-ingressos' | '/pagamento'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/ingresso' | '/meus-ingressos' | '/pagamento'
+  id: '__root__' | '/' | '/ingresso' | '/meus-ingressos' | '/pagamento'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  IngressoRoute: typeof IngressoRoute
+  MeusIngressosRoute: typeof MeusIngressosRoute
+  PagamentoRoute: typeof PagamentoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pagamento': {
+      id: '/pagamento'
+      path: '/pagamento'
+      fullPath: '/pagamento'
+      preLoaderRoute: typeof PagamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-ingressos': {
+      id: '/meus-ingressos'
+      path: '/meus-ingressos'
+      fullPath: '/meus-ingressos'
+      preLoaderRoute: typeof MeusIngressosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ingresso': {
+      id: '/ingresso'
+      path: '/ingresso'
+      fullPath: '/ingresso'
+      preLoaderRoute: typeof IngressoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  IngressoRoute: IngressoRoute,
+  MeusIngressosRoute: MeusIngressosRoute,
+  PagamentoRoute: PagamentoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
