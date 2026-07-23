@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { useAuth } from "@/lib/auth";
 import { TICKET_OPTION, saveTicket, newOrderId } from "@/lib/ticket-store";
-import { Calendar, MapPin, Ticket as TicketIcon, Check, ArrowRight, Mail } from "lucide-react";
+import { Calendar, MapPin, Ticket as TicketIcon, Check, ArrowRight, Mail, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/ingresso")({
   head: () => ({
@@ -15,19 +16,37 @@ export const Route = createFileRoute("/ingresso")({
 });
 
 function SelectTicket() {
+  const { user, loading } = useAuth();
   const [selected, setSelected] = useState(false);
   const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const proceed = () => {
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate({ to: "/entrar" });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const proceed = async () => {
     if (!selected || !email) return;
+    setSubmitting(true);
     const orderId = newOrderId();
-    saveTicket({
+    await saveTicket({
       ...TICKET_OPTION,
       orderId,
       status: "pending",
       buyerEmail: email,
     });
+    setSubmitting(false);
     navigate({ to: "/pagamento", search: { order: orderId } });
   };
 
@@ -103,11 +122,10 @@ function SelectTicket() {
 
         <button
           onClick={proceed}
-          disabled={!selected || !email}
+          disabled={!selected || !email || submitting}
           className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-primary-foreground font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition"
         >
-          Ir para pagamento Pix
-          <ArrowRight className="w-4 h-4" />
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Ir para pagamento Pix<ArrowRight className="w-4 h-4" /></>}
         </button>
       </div>
     </div>

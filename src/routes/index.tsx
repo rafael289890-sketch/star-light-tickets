@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
+import { useAuth } from "@/lib/auth";
 import { Calendar, MapPin, ShieldCheck, Zap, Users, ArrowRight, Star } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -38,13 +40,23 @@ function Index() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              to="/ingresso"
-              className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-4 text-primary-foreground font-semibold animate-pulse-glow hover:scale-[1.02] transition"
-            >
-              Selecionar ingresso existente
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
-            </Link>
+            {user ? (
+              <Link
+                to="/ingresso"
+                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-4 text-primary-foreground font-semibold animate-pulse-glow hover:scale-[1.02] transition"
+              >
+                Selecionar ingresso existente
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+              </Link>
+            ) : (
+              <Link
+                to="/entrar"
+                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-4 text-primary-foreground font-semibold animate-pulse-glow hover:scale-[1.02] transition"
+              >
+                Entrar para comprar
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+              </Link>
+            )}
             <Link
               to="/meus-ingressos"
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-6 py-4 font-semibold hover:bg-accent transition"

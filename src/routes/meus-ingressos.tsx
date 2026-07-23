@@ -1,10 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { SiteHeader } from "@/components/site-header";
+import { useAuth } from "@/lib/auth";
 import { getTickets, type Ticket } from "@/lib/ticket-store";
-import { Calendar, MapPin, CheckCircle2, Ticket as TicketIcon, QrCode, Sparkles } from "lucide-react";
+import { Calendar, MapPin, CheckCircle2, Ticket as TicketIcon, QrCode, Sparkles, Loader2 } from "lucide-react";
 import pixQr from "@/assets/pix-qr.asset.json";
 
 const searchSchema = z.object({ order: z.string().optional() });
@@ -22,19 +23,35 @@ export const Route = createFileRoute("/meus-ingressos")({
 
 function MyTickets() {
   const { order } = Route.useSearch();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
-    const load = () => setTickets(getTickets().filter((t) => t.status === "paid"));
-    load();
-    window.addEventListener("tickets:update", load);
-    window.addEventListener("storage", load);
-    return () => {
-      window.removeEventListener("tickets:update", load);
-      window.removeEventListener("storage", load);
+    if (!authLoading && !user) {
+      navigate({ to: "/entrar" });
+    }
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const load = async () => {
+      const list = await getTickets();
+      if (!active) return;
+      setTickets(list.filter((t) => t.status === "paid"));
+      setLoadingTickets(false);
     };
-  }, []);
+    load();
+    const onUpdate = () => load();
+    window.addEventListener("tickets:update", onUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener("tickets:update", onUpdate);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (order && tickets.find((t) => t.orderId === order)) {
@@ -43,6 +60,14 @@ function MyTickets() {
       return () => clearTimeout(id);
     }
   }, [order, tickets]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,7 +94,11 @@ function MyTickets() {
           </p>
         </div>
 
-        {tickets.length === 0 ? (
+        {loadingTickets ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : tickets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
             <TicketIcon className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <h3 className="font-semibold">Nenhum ingresso ainda</h3>

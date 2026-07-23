@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
-import { getTickets, saveTicket, type Ticket } from "@/lib/ticket-store";
+import { useAuth } from "@/lib/auth";
+import { getTicketByOrderId, saveTicket, type Ticket } from "@/lib/ticket-store";
 import { Copy, Check, ShieldCheck, Clock, QrCode, Loader2 } from "lucide-react";
 import pixQr from "@/assets/pix-qr.asset.json";
 import { z } from "zod";
@@ -26,20 +27,31 @@ export const Route = createFileRoute("/pagamento")({
 function Payment() {
   const { order } = Route.useSearch();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [loadingTicket, setLoadingTicket] = useState(true);
   const [copied, setCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [seconds, setSeconds] = useState(15 * 60);
 
   useEffect(() => {
-    const list = getTickets();
-    const t = list.find((x) => x.orderId === order) || list[list.length - 1];
-    if (!t) {
-      navigate({ to: "/ingresso" });
-      return;
+    if (!authLoading && !user) {
+      navigate({ to: "/entrar" });
     }
-    setTicket(t);
-  }, [order, navigate]);
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!user || !order) return;
+    setLoadingTicket(true);
+    getTicketByOrderId(order).then((t) => {
+      if (!t) {
+        navigate({ to: "/ingresso" });
+        return;
+      }
+      setTicket(t);
+      setLoadingTicket(false);
+    });
+  }, [user, order, navigate]);
 
   useEffect(() => {
     const id = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000);
@@ -61,13 +73,27 @@ function Payment() {
   const confirm = () => {
     if (!ticket) return;
     setConfirming(true);
-    setTimeout(() => {
-      saveTicket({ ...ticket, status: "paid", purchasedAt: new Date().toISOString() });
+    setTimeout(async () => {
+      await saveTicket({ ...ticket, status: "paid", purchasedAt: new Date().toISOString() });
       navigate({ to: "/meus-ingressos", search: { order: ticket.orderId } });
     }, 2200);
   };
 
-  if (!ticket) return null;
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadingTicket || !ticket) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
